@@ -4,6 +4,10 @@ import 'package:next_location/data/api/users_api.dart';
 import 'package:next_location/data/model/user_model.dart';
 
 class UsersRepository {
+  Future<dynamic> addUser(UserModel model, Uint8List? imgFile) async {
+    return await UsersApi().addUser(model, imgFile);
+  }
+
   Future<UserModel?> getUserByID(String id) async {
     DocumentSnapshot? documentSnapshot = await UsersApi().getUserByID(id);
 
@@ -17,22 +21,9 @@ class UsersRepository {
     return userModel;
   }
 
-  Future<UserModel?> getUserByNID(String nid) async {
-    DocumentSnapshot? documentSnapshot = await UsersApi().getUserByNID(nid);
-
-    UserModel? userModel;
-
-    if (documentSnapshot != null && documentSnapshot.exists) {
-      userModel =
-          UserModel.fromJson(documentSnapshot.data() as Map<String, dynamic>);
-    }
-
-    return userModel;
-  }
-
-  Future<UserModel?> getUserBySerial(String serial) async {
+  Future<UserModel?> getUserByNID(String nid, bool approvedOnly) async {
     DocumentSnapshot? documentSnapshot =
-        await UsersApi().getUserBySerial(serial);
+        await UsersApi().getUserByNID(nid, approvedOnly);
 
     UserModel? userModel;
 
@@ -44,15 +35,33 @@ class UsersRepository {
     return userModel;
   }
 
-  Future<dynamic> getUsersCount(String searchText, String searchFilter) async {
-    return await UsersApi().getUsersCount(searchText, searchFilter);
+  Future<UserModel?> getUserBySerial(int serial, bool approvedOnly) async {
+    DocumentSnapshot? documentSnapshot =
+        await UsersApi().getUserBySerial(serial, approvedOnly);
+
+    UserModel? userModel;
+
+    if (documentSnapshot != null && documentSnapshot.exists) {
+      userModel =
+          UserModel.fromJson(documentSnapshot.data() as Map<String, dynamic>);
+    }
+
+    return userModel;
   }
 
-  Future<dynamic> getUsers(UserModel? lastModel, String filter,
-      String ascDescSort, String searchText, String searchFilter) async {
+  Future<dynamic> getUsersCount(
+      String searchText, int role, String searchFilter) async {
+    return await UsersApi().getUsersCount(searchText, role, searchFilter);
+  }
+
+  // role options [0 = end users, 1 = agent, 2 = owner, 3 = real estate managers]
+  // sort options [ 'createdDate', 'dateOfBirth', 'email', 'lastActiveDate', 'nid', 'online', 'phone', 'role', 'serial', 'userName']
+  // search filters options [ 'userName', 'phone', 'nid', 'email', 'serial']
+  Future<dynamic> getUsers(UserModel? lastModel, int role, String sort,
+      bool descending, String searchText, String searchFilter) async {
     List<UserModel> usersList = [];
     QuerySnapshot? querySnapshot = await UsersApi()
-        .getUsers(lastModel, filter, ascDescSort, searchText, searchFilter);
+        .getUsers(lastModel, role, sort, descending, searchText, searchFilter);
     if (querySnapshot != null) {
       if (querySnapshot.docs.isNotEmpty) {
         usersList = querySnapshot.docs
@@ -64,19 +73,6 @@ class UsersRepository {
     } else {
       return 'Timeout';
     }
-  }
-
-  Future<List<UserModel>> getPrevUsers(UserModel? firstModel, String filter,
-      String ascDescSort, String searchText, String searchFilter) async {
-    List<UserModel> userModelList = [];
-    QuerySnapshot? querySnapshot = await UsersApi().getPrevUsers(
-        firstModel, filter, ascDescSort, searchText, searchFilter);
-    if (querySnapshot != null && querySnapshot.docs.isNotEmpty) {
-      userModelList = querySnapshot.docs
-          .map((e) => UserModel.fromJson(e.data() as Map<String, dynamic>))
-          .toList();
-    }
-    return userModelList;
   }
 
   Future<bool> requestDeletion(UserModel userModel) async {

@@ -8,7 +8,7 @@ class UserModel {
       licenseNumber,
       commercialRegNumber,
       representativeRole,
-      area,
+      areaId,
       imgUrl,
       userName,
       email,
@@ -17,7 +17,7 @@ class UserModel {
       firebaseUID, // firebase user UID
       notificationToken; // notification token from firebase messaging
   int? serial,
-      role, // [0 = customer , 1 = agent, 2 = owner]
+      role, // [0 = user , 1 = agent, 2 = owner, 3 = real estate manager]
       status; // [0 = 'pending', 1 = 'approved', 2 = 'rejected', 3 = 'deactivated', 4 = 'requestedDeactivation', 5 = 'requestedDeletion']
 
   bool? online;
@@ -39,7 +39,7 @@ class UserModel {
       this.online,
       this.countryId,
       this.address,
-      this.area,
+      this.areaId,
       this.cityId,
       this.dateOfBirth,
       this.representativeRole,
@@ -68,36 +68,39 @@ class UserModel {
     online = json['online'] ?? false;
     countryId = json['countryId'] ?? '';
     address = json['address'] ?? '';
-    area = json['area'] ?? '';
+    areaId = json['areaId'] ?? '';
     firebaseUID = json['firebaseUID'] ?? '';
     notificationToken = json['notificationToken'] ?? '';
   }
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> data = {};
-    data['userId'] = userId ?? '';
-    data['cityId'] = cityId ?? '';
-    data['licenseNumber'] = licenseNumber ?? '';
-    data['commercialRegNumber'] = commercialRegNumber ?? '';
-    data['imgUrl'] = imgUrl ?? '';
-    data['userName'] = userName ?? '';
-    data['dateOfBirth'] = dateOfBirth;
-    data['lastActiveDate'] = lastActiveDate;
-    data['createdDate'] = createdDate;
-    data['role'] = role ?? '';
-    data['email'] = email ?? '';
-    data['phone'] = phone ?? '';
-    data['nid'] = nid ?? '';
-    data['status'] = status ?? 0;
-    data['role'] = role ?? 0;
-    data['serial'] = serial ?? 0;
-    data['online'] = online ?? false;
-    data['representativeRole'] = representativeRole ?? '';
-    data['address'] = address ?? '';
-    data['area'] = area ?? '';
-    data['countryId'] = countryId ?? '';
-    data['notificationToken'] = notificationToken ?? '';
-    data['firebaseUID'] = firebaseUID ?? '';
+    if (userId != null) data['userId'] = userId;
+    if (cityId != null) data['cityId'] = cityId;
+    if (licenseNumber != null) data['licenseNumber'] = licenseNumber;
+    if (commercialRegNumber != null)
+      data['commercialRegNumber'] = commercialRegNumber;
+    if (lastActiveDate != null) data['lastActiveDate'] = lastActiveDate;
+    if (imgUrl != null) data['imgUrl'] = imgUrl;
+    if (userName != null) data['userName'] = userName;
+    if (dateOfBirth != null) data['dateOfBirth'] = dateOfBirth;
+    if (role != null) data['role'] = role;
+    if (email != null) data['email'] = email;
+    if (phone != null) data['phone'] = phone;
+    if (nid != null) data['nid'] = nid;
+    if (status != null) data['status'] = status;
+    if (role != null) data['role'] = role;
+    if (createdDate != null) data['createdDate'] = createdDate;
+    if (serial != null) data['serial'] = serial;
+    if (online != null) data['online'] = online;
+    if (representativeRole != null)
+      data['representativeRole'] = representativeRole;
+    if (address != null) data['address'] = address;
+    if (areaId != null) data['areaId'] = areaId;
+    if (countryId != null) data['countryId'] = countryId;
+    if (notificationToken != null)
+      data['notificationToken'] = notificationToken;
+    if (firebaseUID != null) data['firebaseUID'] = firebaseUID;
 
     return data;
   }

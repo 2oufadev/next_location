@@ -1,5 +1,25 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:next_location/data/model/contract_user_model.dart';
+import 'package:next_location/data/model/documents_model.dart';
+import 'package:next_location/data/model/invoice_model.dart';
+import 'package:next_location/data/model/invoice_payment_model.dart';
+import 'package:next_location/data/model/property_model.dart';
+import 'package:next_location/data/model/review_item_model.dart';
+import 'package:next_location/data/model/review_model.dart';
+import 'package:next_location/data/model/user_model.dart';
+import 'package:next_location/data/repository/amenities_repository.dart';
+import 'package:next_location/data/repository/areas_repository.dart';
+import 'package:next_location/data/repository/cities_repository.dart';
+import 'package:next_location/data/repository/contracts_repository.dart';
+import 'package:next_location/data/repository/countries_repository.dart';
+import 'package:next_location/data/repository/documents_repository.dart';
+import 'package:next_location/data/repository/invoices_repository.dart';
+import 'package:next_location/data/repository/properties_repository.dart';
+import 'package:next_location/data/repository/reviews_repository.dart';
+import 'package:next_location/data/repository/users_repository.dart';
+import 'package:next_location/data/repository/visits_repository.dart';
 import 'package:next_location/firebase_options.dart';
 
 FirebaseApp? firebaseApp;
@@ -21,25 +41,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Next Location',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Next Location Home Page'),
+      home: const MyHomePage(title: 'Next Location APIs Test'),
     );
   }
 }
@@ -63,23 +68,43 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String data = '';
+  bool loading = false;
 
-  void _incrementCounter() {
+  void testFunction() async {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      data = 'Getting Data';
+      loading = true;
     });
+    // PropertyModel? propertyModel =
+    //     await PropertiesRepository().getPropertyById('saFyo7LUbxztEbHmiGsw');
+    VisitsRepository().getOwnersPrevVisitsCount('5pJoZwxdkrz5c8iWrGah', 0).then(
+      (value) {
+        // if count
+        data = value.toString();
+
+        //  if list
+        // data = value.isNotEmpty
+        //     ? (value
+        //         .map(
+        //           (e) => e.toJson(),
+        //         )
+        //         .toString())
+        //     : 'Empty List';
+
+        //  if model
+        // data = value?.toJson().toString() ?? 'No Model Found';
+        setState(() {
+          loading = false;
+        });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
+    // by the testFunction method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
@@ -97,36 +122,63 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            // Column is also a layout widget. It takes a list of children and
+            // arranges them vertically. By default, it sizes itself to fit its
+            // children horizontally, and tries to be as tall as its parent.
+            //
+            // Column has various properties to control how it sizes itself and
+            // how it positions its children. Here we use mainAxisAlignment to
+            // center the children vertically; the main axis here is the vertical
+            // axis because Columns are vertical (the cross axis would be
+            // horizontal).
+            //
+            // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+            // action in the IDE, or press "p" in the console), to see the
+            // wireframe for each widget.
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              SizedBox(
+                height: 50,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              const Text(
+                'Api Data',
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Text(
+                data,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              SizedBox(
+                height: 100,
+              )
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: testFunction,
+        tooltip: 'Test',
+        child: loading
+            ? Center(
+                child: SizedBox(
+                  height: 15,
+                  width: 15,
+                  child: CircularProgressIndicator(
+                    color: Colors.black,
+                    strokeWidth: 2,
+                  ),
+                ),
+              )
+            : const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

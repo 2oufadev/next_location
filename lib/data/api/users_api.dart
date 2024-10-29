@@ -20,8 +20,8 @@ class UsersApi {
       int randomNo = 0;
       bool idAvailable = false;
       while (!idAvailable) {
-        randomNumber = random.nextInt(100000000);
-        randomNo = 100000000 + randomNumber;
+        randomNumber = random.nextInt(1000000000);
+        randomNo = 1000000000 + randomNumber;
         bool result = await checkUserSerialAvailability(randomNo);
         if (result) {
           idAvailable = true;
@@ -39,6 +39,7 @@ class UsersApi {
       model.userId = reference.id;
       return model;
     } catch (e) {
+      debugPrint(e.toString());
       return false;
     }
   }
@@ -59,7 +60,7 @@ class UsersApi {
       });
       return true;
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       return false;
     }
   }
@@ -76,19 +77,32 @@ class UsersApi {
 
       return documentSnapshot;
     } catch (e) {
+      debugPrint(e.toString());
       return null;
     }
   }
 
-  Future<DocumentSnapshot?> getUserByNID(String nid) async {
+  Future<DocumentSnapshot?> getUserByNID(String nid, bool approvedOnly) async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('Users')
-          .where('nid', isEqualTo: nid)
-          .get()
-          .timeout(Constants.requestsTimeout, onTimeout: () {
-        throw 'Timeout';
-      });
+      QuerySnapshot querySnapshot;
+      if (approvedOnly) {
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .where('nid', isEqualTo: nid)
+            .where('status', isEqualTo: 1)
+            .get()
+            .timeout(Constants.requestsTimeout, onTimeout: () {
+          throw 'Timeout';
+        });
+      } else {
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .where('nid', isEqualTo: nid)
+            .get()
+            .timeout(Constants.requestsTimeout, onTimeout: () {
+          throw 'Timeout';
+        });
+      }
 
       DocumentSnapshot? documentSnapshot;
 
@@ -97,19 +111,33 @@ class UsersApi {
       }
       return documentSnapshot;
     } catch (e) {
+      debugPrint(e.toString());
       return null;
     }
   }
 
-  Future<DocumentSnapshot?> getUserBySerial(String nid) async {
+  Future<DocumentSnapshot?> getUserBySerial(
+      int serial, bool approvedOnly) async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('Users')
-          .where('serial', isEqualTo: nid)
-          .get()
-          .timeout(Constants.requestsTimeout, onTimeout: () {
-        throw 'Timeout';
-      });
+      QuerySnapshot querySnapshot;
+      if (approvedOnly) {
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .where('serial', isEqualTo: serial)
+            .where('status', isEqualTo: 1)
+            .get()
+            .timeout(Constants.requestsTimeout, onTimeout: () {
+          throw 'Timeout';
+        });
+      } else {
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .where('serial', isEqualTo: serial)
+            .get()
+            .timeout(Constants.requestsTimeout, onTimeout: () {
+          throw 'Timeout';
+        });
+      }
 
       DocumentSnapshot? documentSnapshot;
 
@@ -118,12 +146,13 @@ class UsersApi {
       }
       return documentSnapshot;
     } catch (e) {
+      debugPrint(e.toString());
       return null;
     }
   }
 
-  Future<QuerySnapshot?> getUsers(UserModel? lastModel, String filter,
-      String ascDescSort, String searchText, String searchFilter) async {
+  Future<QuerySnapshot?> getUsers(UserModel? lastModel, int role, String sort,
+      bool descending, String searchText, String searchFilter) async {
     QuerySnapshot snapshot;
 
     try {
@@ -154,6 +183,7 @@ class UsersApi {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
                 .where(searchFilter,
                     isGreaterThanOrEqualTo: searchText,
                     isLessThanOrEqualTo: searchText.substring(
@@ -163,8 +193,7 @@ class UsersApi {
                                 : null) +
                         String.fromCharCode(
                             searchText.codeUnitAt(searchText.length - 1) + 1))
-                .orderBy(searchFilter,
-                    descending: ascDescSort == 'asc' ? false : true)
+                .orderBy(searchFilter, descending: descending)
                 .startAfterDocument(documentSnapshot)
                 .limit(10)
                 .get()
@@ -175,12 +204,12 @@ class UsersApi {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
                 .where(
                   searchFilter,
                   isGreaterThanOrEqualTo: searchText,
                 )
-                .orderBy(searchFilter,
-                    descending: ascDescSort == 'asc' ? false : true)
+                .orderBy(searchFilter, descending: descending)
                 .startAfterDocument(documentSnapshot)
                 .limit(10)
                 .get()
@@ -189,16 +218,32 @@ class UsersApi {
             });
           }
         } else {
-          snapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('status', isEqualTo: 1)
-              .orderBy(filter, descending: ascDescSort == 'asc' ? false : true)
-              .startAfterDocument(documentSnapshot)
-              .limit(10)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
+          if (sort == 'createdDate' || sort.isEmpty) {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
+                .orderBy('createdDate', descending: descending)
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get()
+                .timeout(Constants.requestsTimeout, onTimeout: () {
+              throw 'Timeout';
+            });
+          } else {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
+                .orderBy(sort, descending: descending)
+                .orderBy('createdDate', descending: true)
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get()
+                .timeout(Constants.requestsTimeout, onTimeout: () {
+              throw 'Timeout';
+            });
+          }
         }
       } else {
         if (searchText.isNotEmpty) {
@@ -206,6 +251,7 @@ class UsersApi {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
                 .where(searchFilter,
                     isGreaterThanOrEqualTo: searchText,
                     isLessThanOrEqualTo: searchText.substring(
@@ -215,8 +261,7 @@ class UsersApi {
                                 : null) +
                         String.fromCharCode(
                             searchText.codeUnitAt(searchText.length - 1) + 1))
-                .orderBy(searchFilter,
-                    descending: ascDescSort == 'asc' ? false : true)
+                .orderBy(searchFilter, descending: descending)
                 .limit(10)
                 .get()
                 .timeout(Constants.requestsTimeout, onTimeout: () {
@@ -226,12 +271,12 @@ class UsersApi {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
+                .where('role', isEqualTo: role)
                 .where(
                   searchFilter,
                   isGreaterThanOrEqualTo: searchText,
                 )
-                .orderBy(searchFilter,
-                    descending: ascDescSort == 'asc' ? false : true)
+                .orderBy(searchFilter, descending: descending)
                 .limit(10)
                 .get()
                 .timeout(Constants.requestsTimeout, onTimeout: () {
@@ -239,12 +284,12 @@ class UsersApi {
             });
           }
         } else {
-          if (filter == 'createdDate') {
+          if (sort == 'createdDate' || sort.isEmpty) {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
-                .orderBy('createdDate',
-                    descending: ascDescSort == 'asc' ? false : true)
+                .where('role', isEqualTo: role)
+                .orderBy('createdDate', descending: descending)
                 .limit(10)
                 .get()
                 .timeout(Constants.requestsTimeout, onTimeout: () {
@@ -254,8 +299,8 @@ class UsersApi {
             snapshot = await FirebaseFirestore.instance
                 .collection('Users')
                 .where('status', isEqualTo: 1)
-                .orderBy(filter,
-                    descending: ascDescSort == 'asc' ? false : true)
+                .where('role', isEqualTo: role)
+                .orderBy(sort, descending: descending)
                 .orderBy('createdDate', descending: true)
                 .limit(10)
                 .get()
@@ -268,11 +313,13 @@ class UsersApi {
 
       return snapshot;
     } catch (e) {
+      debugPrint(e.toString());
       return null;
     }
   }
 
-  Future<int> getUsersCount(String searchText, String searchFilter) async {
+  Future<int> getUsersCount(
+      String searchText, int role, String searchFilter) async {
     try {
       AggregateQuerySnapshot snapshot;
 
@@ -281,6 +328,7 @@ class UsersApi {
           snapshot = await FirebaseFirestore.instance
               .collection('Users')
               .where('status', isEqualTo: 1)
+              .where('role', isEqualTo: role)
               .where(searchFilter,
                   isGreaterThanOrEqualTo: searchText,
                   isLessThanOrEqualTo: searchText.substring(
@@ -296,6 +344,7 @@ class UsersApi {
           snapshot = await FirebaseFirestore.instance
               .collection('Users')
               .where('status', isEqualTo: 1)
+              .where('role', isEqualTo: role)
               .where(
                 searchFilter,
                 isGreaterThanOrEqualTo: searchText,
@@ -310,6 +359,7 @@ class UsersApi {
         snapshot = await FirebaseFirestore.instance
             .collection('Users')
             .where('status', isEqualTo: 1)
+            .where('role', isEqualTo: role)
             .count()
             .get()
             .timeout(Constants.requestsTimeout, onTimeout: () {
@@ -319,106 +369,8 @@ class UsersApi {
 
       return snapshot.count ?? 0;
     } catch (e) {
+      debugPrint(e.toString());
       return 0;
-    }
-  }
-
-  Future<QuerySnapshot?> getPrevUsers(UserModel? firstModel, String filter,
-      String ascDescSort, String searchText, String searchFilter) async {
-    try {
-      QuerySnapshot snapshot;
-
-      DocumentSnapshot? documentSnapshot;
-      if (firstModel != null) {
-        if (firstModel.userId!.isNotEmpty) {
-          documentSnapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .doc(firstModel.userId)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-        } else {
-          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('createdDate', isEqualTo: firstModel.createdDate!)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-          documentSnapshot = querySnapshot.docs.first;
-        }
-      }
-      if (searchText.isNotEmpty) {
-        if (searchText.length > 1) {
-          snapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('status', isEqualTo: 1)
-              .where(searchFilter,
-                  isGreaterThanOrEqualTo: searchText,
-                  isLessThanOrEqualTo: searchText.substring(
-                          0,
-                          searchText.length > 1
-                              ? (searchText.length - 1)
-                              : null) +
-                      String.fromCharCode(
-                          searchText.codeUnitAt(searchText.length - 1) + 1))
-              .orderBy(searchFilter,
-                  descending: ascDescSort == 'asc' ? false : true)
-              .endBeforeDocument(documentSnapshot!)
-              .limitToLast(10)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-        } else {
-          snapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('status', isEqualTo: 1)
-              .where(
-                searchFilter,
-                isGreaterThanOrEqualTo: searchText,
-              )
-              .orderBy(searchFilter,
-                  descending: ascDescSort == 'asc' ? false : true)
-              .endBeforeDocument(documentSnapshot!)
-              .limitToLast(10)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-        }
-      } else {
-        if (filter == 'createdDate') {
-          snapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('status', isEqualTo: 1)
-              .orderBy('createdDate',
-                  descending: ascDescSort == 'asc' ? false : true)
-              .endBeforeDocument(documentSnapshot!)
-              .limitToLast(10)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-        } else {
-          snapshot = await FirebaseFirestore.instance
-              .collection('Users')
-              .where('status', isEqualTo: 1)
-              .orderBy(filter, descending: ascDescSort == 'asc' ? false : true)
-              .orderBy('createdDate', descending: true)
-              .endBeforeDocument(documentSnapshot!)
-              .limitToLast(10)
-              .get()
-              .timeout(Constants.requestsTimeout, onTimeout: () {
-            throw 'Timeout';
-          });
-        }
-      }
-
-      return snapshot;
-    } catch (e) {
-      return null;
     }
   }
 
@@ -433,6 +385,7 @@ class UsersApi {
       });
       return true;
     } catch (e) {
+      debugPrint(e.toString());
       return false;
     }
   }
@@ -448,6 +401,7 @@ class UsersApi {
       });
       return true;
     } catch (e) {
+      debugPrint(e.toString());
       return false;
     }
   }
@@ -463,6 +417,7 @@ class UsersApi {
       });
       return querySnapshot.docs.isEmpty;
     } catch (e) {
+      debugPrint(e.toString());
       debugPrint(e.toString());
       return false;
     }
