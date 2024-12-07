@@ -7,6 +7,7 @@ import 'package:next_location/data/model/image_model.dart';
 import 'package:next_location/data/model/property_model.dart';
 import 'package:next_location/data/model/video_model.dart';
 import 'package:next_location/utils/constants.dart';
+import 'package:ntp/ntp.dart';
 
 class PropertiesApi {
   Future<QuerySnapshot?> getUsersProperties(
@@ -420,6 +421,359 @@ class PropertiesApi {
     } catch (e) {
       debugPrint(e.toString());
       return false;
+    }
+  }
+
+  Future<bool> addPropertyToFavorites(
+      PropertyModel propertyModel, String userId) async {
+    try {
+      DateTime currentDate = await NTP.now();
+
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('Favorites')
+          .doc(propertyModel.propertyId)
+          .set({
+        'propertyId': propertyModel.propertyId,
+        'title': propertyModel.title,
+        'date': Timestamp.fromDate(currentDate)
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint(e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> removePropertyFromFavorites(
+      String propertyId, String userId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('Favorites')
+          .doc(propertyId)
+          .delete();
+
+      return true;
+    } catch (e) {
+      debugPrint(e.toString());
+      return false;
+    }
+  }
+
+  Future<QuerySnapshot?> getFavoriteProperties(
+      String userId, String? lastModelId, String? searchText) async {
+    QuerySnapshot snapshot;
+
+    DocumentSnapshot? documentSnapshot;
+
+    try {
+      if (lastModelId != null) {
+        documentSnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userId)
+            .collection('Favorites')
+            .doc(lastModelId)
+            .get();
+
+        if (searchText != null && searchText.isNotEmpty) {
+          if (searchText.length > 1) {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('Favorites')
+                .where('title',
+                    isGreaterThanOrEqualTo: searchText,
+                    isLessThanOrEqualTo: searchText.substring(
+                            0,
+                            searchText.length > 1
+                                ? (searchText.length - 1)
+                                : null) +
+                        String.fromCharCode(
+                            searchText.codeUnitAt(searchText.length - 1) + 1))
+                .orderBy('date')
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get();
+          } else {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('Favorites')
+                .where(
+                  'title',
+                  isGreaterThanOrEqualTo: searchText,
+                )
+                .orderBy('date')
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get();
+          }
+        } else {
+          snapshot = await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(userId)
+              .collection('Favorites')
+              .orderBy('date')
+              .startAfterDocument(documentSnapshot)
+              .limit(10)
+              .get();
+        }
+      } else {
+        if (searchText != null && searchText.isNotEmpty) {
+          if (searchText.length > 1) {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('Favorites')
+                .where('title',
+                    isGreaterThanOrEqualTo: searchText,
+                    isLessThanOrEqualTo: searchText.substring(
+                            0,
+                            searchText.length > 1
+                                ? (searchText.length - 1)
+                                : null) +
+                        String.fromCharCode(
+                            searchText.codeUnitAt(searchText.length - 1) + 1))
+                .orderBy('date')
+                .limit(10)
+                .get();
+          } else {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('Favorites')
+                .where(
+                  'title',
+                  isGreaterThanOrEqualTo: searchText,
+                )
+                .orderBy('date')
+                .limit(10)
+                .get();
+          }
+        } else {
+          snapshot = await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(userId)
+              .collection('Favorites')
+              .orderBy('date')
+              .limit(10)
+              .get();
+        }
+      }
+
+      List<String> propertiesIds = [];
+      if (snapshot.docs.isNotEmpty) {
+        propertiesIds = snapshot.docs
+            .map(
+              (e) => e.get('propertyId').toString(),
+            )
+            .toList();
+      }
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Properties')
+          .where('propertyId', whereIn: [propertiesIds]).get();
+
+      return querySnapshot;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<int> getFavoritesCount(String userId) async {
+    try {
+      AggregateQuerySnapshot snapshot;
+
+      snapshot = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('Favorites')
+          .count()
+          .get();
+
+      return snapshot.count ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<bool> saveProperty(PropertyModel propertyModel, String userId) async {
+    try {
+      DateTime currentDate = await NTP.now();
+
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('SavedProperties')
+          .doc(propertyModel.propertyId)
+          .set({
+        'propertyId': propertyModel.propertyId,
+        'title': propertyModel.title,
+        'date': Timestamp.fromDate(currentDate)
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint(e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> removeFromSavedProperties(
+      String propertyId, String userId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('SavedProperties')
+          .doc(propertyId)
+          .delete();
+
+      return true;
+    } catch (e) {
+      debugPrint(e.toString());
+      return false;
+    }
+  }
+
+  Future<QuerySnapshot?> getSavedProperties(
+      String userId, String? lastModelId, String? searchText) async {
+    QuerySnapshot snapshot;
+
+    DocumentSnapshot? documentSnapshot;
+
+    try {
+      if (lastModelId != null) {
+        documentSnapshot = await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userId)
+            .collection('SavedProperties')
+            .doc(lastModelId)
+            .get();
+
+        if (searchText != null && searchText.isNotEmpty) {
+          if (searchText.length > 1) {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('SavedProperties')
+                .where('title',
+                    isGreaterThanOrEqualTo: searchText,
+                    isLessThanOrEqualTo: searchText.substring(
+                            0,
+                            searchText.length > 1
+                                ? (searchText.length - 1)
+                                : null) +
+                        String.fromCharCode(
+                            searchText.codeUnitAt(searchText.length - 1) + 1))
+                .orderBy('date')
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get();
+          } else {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('SavedProperties')
+                .where(
+                  'title',
+                  isGreaterThanOrEqualTo: searchText,
+                )
+                .orderBy('date')
+                .startAfterDocument(documentSnapshot)
+                .limit(10)
+                .get();
+          }
+        } else {
+          snapshot = await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(userId)
+              .collection('SavedProperties')
+              .orderBy('date')
+              .startAfterDocument(documentSnapshot)
+              .limit(10)
+              .get();
+        }
+      } else {
+        if (searchText != null && searchText.isNotEmpty) {
+          if (searchText.length > 1) {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('SavedProperties')
+                .where('title',
+                    isGreaterThanOrEqualTo: searchText,
+                    isLessThanOrEqualTo: searchText.substring(
+                            0,
+                            searchText.length > 1
+                                ? (searchText.length - 1)
+                                : null) +
+                        String.fromCharCode(
+                            searchText.codeUnitAt(searchText.length - 1) + 1))
+                .orderBy('date')
+                .limit(10)
+                .get();
+          } else {
+            snapshot = await FirebaseFirestore.instance
+                .collection('Users')
+                .doc(userId)
+                .collection('SavedProperties')
+                .where(
+                  'title',
+                  isGreaterThanOrEqualTo: searchText,
+                )
+                .orderBy('date')
+                .limit(10)
+                .get();
+          }
+        } else {
+          snapshot = await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(userId)
+              .collection('SavedProperties')
+              .orderBy('date')
+              .limit(10)
+              .get();
+        }
+      }
+
+      List<String> propertiesIds = [];
+      if (snapshot.docs.isNotEmpty) {
+        propertiesIds = snapshot.docs
+            .map(
+              (e) => e.get('propertyId').toString(),
+            )
+            .toList();
+      }
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('Properties')
+          .where('propertyId', whereIn: [propertiesIds]).get();
+
+      return querySnapshot;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<int> getSavedPropertiesCount(String userId) async {
+    try {
+      AggregateQuerySnapshot snapshot;
+
+      snapshot = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('SavedProperties')
+          .count()
+          .get();
+
+      return snapshot.count ?? 0;
+    } catch (e) {
+      return 0;
     }
   }
 }

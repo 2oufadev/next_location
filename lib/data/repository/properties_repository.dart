@@ -174,4 +174,70 @@ class PropertiesRepository {
   Future<bool> deleteProperty(PropertyModel model) async {
     return await PropertiesApi().deleteProperty(model);
   }
+
+  Future<dynamic> addPropertyToFavorites(
+      PropertyModel model, String userId) async {
+    return await PropertiesApi().addPropertyToFavorites(model, userId);
+  }
+
+  Future<dynamic> removePropertyFromFavorites(
+      String propertyId, String userId) async {
+    return await PropertiesApi()
+        .removePropertyFromFavorites(propertyId, userId);
+  }
+
+  Future<dynamic> saveProperty(PropertyModel model, String userId) async {
+    return await PropertiesApi().saveProperty(model, userId);
+  }
+
+  Future<dynamic> removeFromSavedProperties(
+      String propertyId, String userId) async {
+    return await PropertiesApi().removeFromSavedProperties(propertyId, userId);
+  }
+
+  Future<List<PropertyModel>> getFavoriteProperties(
+      String userId, String? lastModelId, String searchText) async {
+    List<PropertyModel> propertiesList = [];
+
+    QuerySnapshot? querySnapshot = await PropertiesApi()
+        .getFavoriteProperties(userId, lastModelId, searchText);
+
+    if (querySnapshot != null && querySnapshot.docs.isNotEmpty) {
+      propertiesList = querySnapshot.docs
+          .map(
+            (e) => PropertyModel.fromJson(e.data() as Map<String, dynamic>),
+          )
+          .toList();
+    }
+    return propertiesList;
+  }
+
+  Future<int> getFavoritesCount(
+    String userId,
+  ) async {
+    return await PropertiesApi().getFavoritesCount(userId);
+  }
+
+  Future<List<PropertyModel>> getSavedProperties(
+      String userId, String? lastModelId, String searchText) async {
+    List<PropertyModel> propertiesList = [];
+
+    QuerySnapshot? querySnapshot = await PropertiesApi()
+        .getSavedProperties(userId, lastModelId, searchText);
+
+    if (querySnapshot != null && querySnapshot.docs.isNotEmpty) {
+      propertiesList = querySnapshot.docs
+          .map(
+            (e) => PropertyModel.fromJson(e.data() as Map<String, dynamic>),
+          )
+          .toList();
+    }
+    return propertiesList;
+  }
+
+  Future<int> getSavedPropertiesCount(
+    String userId,
+  ) async {
+    return await PropertiesApi().getSavedPropertiesCount(userId);
+  }
 }

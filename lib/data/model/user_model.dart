@@ -13,6 +13,7 @@ class UserModel {
       userName,
       email,
       phone,
+      countryCode,
       address,
       firebaseUID, // firebase user UID
       notificationToken; // notification token from firebase messaging
@@ -45,7 +46,8 @@ class UserModel {
       this.representativeRole,
       this.serial,
       this.firebaseUID,
-      this.notificationToken);
+      this.notificationToken,
+      this.countryCode);
 
   UserModel.fromJson(Map<String, dynamic> json) {
     userId = json['userId'] ?? '';
@@ -60,6 +62,7 @@ class UserModel {
     role = json['role'] ?? 0;
     email = json['email'] ?? '';
     phone = json['phone'] ?? '';
+    countryCode = json['countryCode'] ?? '';
     representativeRole = json['representativeRole'] ?? '';
     nid = json['nid'] ?? '';
     status = json['status'] ?? 0;
@@ -98,6 +101,7 @@ class UserModel {
     if (address != null) data['address'] = address;
     if (areaId != null) data['areaId'] = areaId;
     if (countryId != null) data['countryId'] = countryId;
+    if (countryCode != null) data['countryCode'] = countryCode;
     if (notificationToken != null)
       data['notificationToken'] = notificationToken;
     if (firebaseUID != null) data['firebaseUID'] = firebaseUID;
